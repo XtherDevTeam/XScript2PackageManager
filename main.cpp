@@ -32,7 +32,7 @@ int main(int argc, const char **argv) {
     if (Arguments.count("switch-mirror")) {
         Utils::IsGlobal = true;
         Utils::GetPMConfigFile();
-        Utils::PMConfig["Mirror"] = Arguments["url"];
+        Utils::PMConfig["Mirror"] = Arguments["host"];
         Utils::StorePMConfigFile();
     } else if (Arguments.count("install")) {
         Utils::IsGlobal = true;
@@ -45,12 +45,21 @@ int main(int argc, const char **argv) {
         if (!Arguments.count("global")) {
             Utils::IsGlobal = false;
             Utils::GetPMConfigFile();
-            Utils::PMConfig["Dependencies"].push_back(
-                    (std::map<std::string, std::string>) {
-                            {"Name",    Arguments["name"]},
-                            {"Version", Arguments["ver"]}
-                    });
-            Utils::StorePMConfigFile();
+            bool IsNotExist = true;
+            for (auto Iter = Utils::PMConfig["Dependencies"].begin(); Iter != Utils::PMConfig["Dependencies"].end(); Iter++) {
+                if ((*Iter)["Name"] ==     Arguments["name"]) {
+                    IsNotExist = false;
+                    break;
+                }
+            }
+            if (IsNotExist) {
+                Utils::PMConfig["Dependencies"].push_back(
+                        (std::map<std::string, std::string>) {
+                                {"Name",    Arguments["name"]},
+                                {"Version", Arguments["ver"]}
+                        });
+                Utils::StorePMConfigFile();
+            }
         }
     } else if (Arguments.count("uninstall")) {
         Utils::IsGlobal = true;

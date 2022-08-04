@@ -93,10 +93,10 @@ namespace Utils {
     JSON &GetPMConfigFile() {
         if (PMConfig == (JSON) {}) {
             if (IsGlobal) {
-                puts(("global: " + GetPackageManagerDir() + "/" + PMConfigFileName).c_str());
+//                puts(("global: " + GetPackageManagerDir() + "/" + PMConfigFileName).c_str());
                 return PMConfig = JSON::parse(std::ifstream(GetPackageManagerDir() + "/" + PMConfigFileName));
             } else {
-                puts(("local: " + (std::string) ("./") + PMConfigFileName).c_str());
+//                puts(("local: " + (std::string) ("./") + PMConfigFileName).c_str());
                 return PMConfig = JSON::parse(std::ifstream((std::string) ("./") + PMConfigFileName));
             }
         } else {
