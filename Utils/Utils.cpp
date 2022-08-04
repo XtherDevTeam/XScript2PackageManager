@@ -240,5 +240,15 @@ namespace Utils {
 
         Format.CompressDirectory("", Path / "NativeLibraries",
                                  Path / (PackageName + ".native_" + OperatingSystem + "_" + Architecture + ".xar"), {});
+    }
+
+    void Initialize() {
+        // www.xiaokang00010.top:4002
+        JSON NewConfigFile;
+        NewConfigFile["XPMVersion"] = XPMBuildNumber;
+        NewConfigFile["Mirror"] = "www.xiaokang00010.top:4002";
+        NewConfigFile["InstalledPackages"] = (std::map<XBytes, XBytes>) {};
+        std::ofstream Stream(GetPackageManagerDir() + "/" + PMConfigFileName);
+        Stream << std::setw(4) << NewConfigFile;
+        Stream.close();
     };
-}

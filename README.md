@@ -1,6 +1,8 @@
 # A package manager for XScript 2
 
-## Usage:
+## Usage
+
+You need to initialize xpm by `xpm init` at first run.
 
 ```
 xpm switch-mirror host=http[s]://hostname
@@ -14,6 +16,8 @@ xpm run-project
 xpm pack-build-dir
 
 xpm run-package package=PackageName exec=ExecFileName
+
+xpm init
 ```
 
 ## Known issues

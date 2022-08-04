@@ -95,7 +95,8 @@ int main(int argc, const char **argv) {
         Utils::StorePMConfigFile();
     } else if (Arguments.count("run-package")) {
         Utils::RunPackage(Arguments["package"], Arguments["exec"]);
+    } else if (Arguments.count("init")) {
+        Utils::Initialize();
     }
-
     return 0;
 }

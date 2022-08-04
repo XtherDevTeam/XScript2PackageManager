@@ -76,6 +76,8 @@ namespace Utils {
     void RunPackage(const std::string &Package, const std::string &PkgFileName);
 
     void PackBuildDir(const std::string &PackageName);
+
+    void Initialize();
 }
 
 #endif //XSCRIPT2PACKAGEMANAGER_UTILS_HPP
