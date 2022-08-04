@@ -38,7 +38,7 @@ namespace Utils {
         path.resize(length + 1);
         wai_getExecutablePath(path.data(), length, &dirname_length);
         path[length] = '\0';
-        return path.substr(0, path.rfind('/'));
+        return path.substr(0, path.rfind(std::filesystem::path::preferred_separator));
     }
 
     JSON &GetPMConfigFile() {
@@ -57,11 +57,13 @@ namespace Utils {
 
     void StorePMConfigFile() {
         if (IsGlobal) {
-            std::ofstream Out(GetPackageManagerDir() + "/" + PMConfigFileName);
+            std::ofstream Out(GetPackageManagerDir() + "/" + PMConfigFileName,
+                              std::ios::out | std::ios::trunc);
             Out << std::setw(4) << PMConfig;
             Out.close();
         } else {
-            std::ofstream Out((std::string) ("./") + PMConfigFileName);
+            std::ofstream Out((std::string) ("./") + PMConfigFileName,
+                              std::ios::out | std::ios::trunc);
             Out << std::setw(4) << PMConfig;
             Out.close();
         }
@@ -128,11 +130,14 @@ namespace Utils {
             )"_json;
         // the output folder of compiler
         NewConfigFile["BuildDir"] = "XPMBuildDir";
-        std::ofstream Stream((std::string) ("./") + NameOfTheProject + "/" + PMConfigFileName);
+        std::ofstream Stream(std::filesystem::path(((std::string) ("./") + NameOfTheProject + "/" + PMConfigFileName)),
+                             std::ios::out | std::ios::trunc);
         Stream << std::setw(4) << NewConfigFile;
         Stream.close();
 
-        Stream = (std::ofstream) {(std::string) ("./") + NameOfTheProject + "/Sources/Main/Main.xs"};
+        Stream = (std::ofstream) {
+                std::filesystem::path((std::string) ("./") + NameOfTheProject + "/Sources/Main/Main.xs"),
+                std::ios::out | std::ios::trunc};
         Stream << DefaultMainFile;
         Stream.close();
     }
@@ -143,17 +148,17 @@ namespace Utils {
             if (I["IsExecutable"]) {
                 Environ.CompilerFlags.push_back(L"compile_as_executable.true");
             }
-            Environ.PathsToSearch.push_back(L"./" + string2wstring(PMConfig["BuildDir"].get<std::string>()));
-            Environ.PathsToSearch.push_back(string2wstring(GetPackageManagerDir() + "/InstalledPackages"));
-            AddDirectoryToTarget(Environ, "./" + I["Path"].get<std::string>());
+            Environ.PathsToSearch.push_back(string2wstring((std::filesystem::path(".") / PMConfig["BuildDir"].get<std::string>()).string()));
+            Environ.PathsToSearch.push_back(string2wstring((std::filesystem::path(GetPackageManagerDir()) / "InstalledPackages").string()));
+            AddDirectoryToTarget(Environ, std::filesystem::path(".") / I["Path"].get<std::string>());
             XScript::OutputBinary(
                     Environ,
                     string2wstring(
-                            "./" + PMConfig["BuildDir"].get<std::string>() + "/" + I["Name"].get<std::string>()));
+                            (std::filesystem::path(".") / PMConfig["BuildDir"].get<std::string>() / I["Name"].get<std::string>()).string()));
         }
     }
 
-    void AddDirectoryToTarget(XScript::Compiler::CompilerEnvironment &Env, const std::string &Path) {
+    void AddDirectoryToTarget(XScript::Compiler::CompilerEnvironment &Env, const std::filesystem::path &Path) {
         for (auto &I: std::filesystem::directory_iterator(Path)) {
             if (I.is_directory()) {
                 AddDirectoryToTarget(Env, I.path());
@@ -168,23 +173,26 @@ namespace Utils {
 
     void RunProject(const std::string &PkgFileName) {
         XScript::Executor VM;
-        VM.VM.PathsToSearch.push_back(L"./" + string2wstring(PMConfig["BuildDir"].get<std::string>()));
-        VM.VM.PathsToSearch.push_back(string2wstring(GetPackageManagerDir() + "/InstalledPackages"));
-        VM.Load(L"./" + string2wstring(PMConfig["BuildDir"].get<std::string>()) + L"/" + string2wstring(PkgFileName));
+        VM.VM.PathsToSearch.push_back(string2wstring((std::filesystem::path(".") /PMConfig["BuildDir"].get<std::string>()).string()));
+        VM.VM.PathsToSearch.push_back(
+                string2wstring((std::filesystem::path(GetPackageManagerDir()) / "InstalledPackages").string()));
+        VM.Load(string2wstring((std::filesystem::path(".") /
+                                PMConfig["BuildDir"].get<std::string>() / string2wstring(PkgFileName)).string()));
         VM.Init();
         VM.Start();
     }
 
     void RunPackage(const std::string &Package, const std::string &PkgFileName) {
         XScript::Executor VM;
-        VM.VM.PathsToSearch.push_back(string2wstring(GetPackageDir(Package)));
-        VM.VM.PathsToSearch.push_back(string2wstring(GetPackageManagerDir() + "/InstalledPackages"));
+        VM.VM.PathsToSearch.push_back(string2wstring(GetPackageDir(Package).string()));
+        VM.VM.PathsToSearch.push_back(
+                string2wstring((std::filesystem::path(GetPackageManagerDir()) / "InstalledPackages").string()));
         VM.Init();
         VM.Start();
     }
 
     void PackBuildDir(const std::string &PackageName) {
-        std::filesystem::path Path = "./" + PMConfig["BuildDir"].get<std::string>();
+        std::filesystem::path Path = std::filesystem::path(".") / PMConfig["BuildDir"].get<std::string>();
         XArchive::ArchiveFormat Format{};
         auto IgnoreFiles = XArchive::ArchiveFormat::MakeIgnoreFileList(Path, {"NativeLibraries"});
         Format.CompressDirectory("", Path, Path / (PackageName + ".bytecode_package.xar"), IgnoreFiles);
@@ -198,7 +206,8 @@ namespace Utils {
         NewConfigFile["XPMVersion"] = XPMBuildNumber;
         NewConfigFile["Mirror"] = "http://www.xiaokang00010.top:4002";
         NewConfigFile["InstalledPackages"] = (std::map<XBytes, XBytes>) {};
-        std::ofstream Stream(GetPackageManagerDir() + "/" + PMConfigFileName);
+        std::ofstream Stream(std::filesystem::path(GetPackageManagerDir()) / PMConfigFileName,
+                             std::ios::out | std::ios::trunc);
         Stream << std::setw(4) << NewConfigFile;
         Stream.close();
     }

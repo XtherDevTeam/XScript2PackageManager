@@ -23,6 +23,8 @@ using JSON = nlohmann::json;
 #elif defined(__APPLE__)
 #define OperatingSystem "darwin"
 #elif defined(_WIN32)
+#pragma comment(lib, "ws2_32.lib")
+
 #define OperatingSystem "win32"
 #else
 #define OperatingSystem "unknown"
@@ -67,7 +69,7 @@ namespace Utils {
 
     void MakeProject(const XBytes &NameOfTheProject);
 
-    void AddDirectoryToTarget(XScript::Compiler::CompilerEnvironment &Env, const std::string &Path);
+    void AddDirectoryToTarget(XScript::Compiler::CompilerEnvironment &Env, const std::filesystem::path &Path);
 
     void BuildProject();
 
