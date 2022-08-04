@@ -15,19 +15,6 @@
 #include <fstream>
 #include <iostream>
 
-#if defined(_WIN32)
-
-#include <direct.h>
-#include <windows.h>
-#define mkdir _mkdir
-
-#elif defined(__APPLE__)
-
-#import <Foundation/Foundation.h>
-#include <mach-o/dyld.h>
-
-#endif
-
 namespace Utils {
     JSON PMConfig;
 
