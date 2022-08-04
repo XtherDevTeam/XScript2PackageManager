@@ -6,58 +6,85 @@
 #include "../Utils/PackageNotExist.hpp"
 #include "../Utils/PackageVersionNotExist.hpp"
 #include "../Utils/CannotCreateFile.hpp"
+#include "../Utils/XArchive/Sources/ArchiveFormat.hpp"
 
-Mirror::Mirror(const XBytes &MirrorUrl) : MirrorUrl(MirrorUrl), Client(MirrorUrl) {
+Mirror::Mirror(const XBytes &MirrorUrl) : MirrorUrl(MirrorUrl) {
     if (Utils::PMConfig == (JSON) {}) {
         Utils::GetPMConfigFile();
     }
 }
 
-JSON Mirror::Query(const XBytes &PackageName) {
-    auto InformationResp = Client.Get("/packages/" + PackageName + "/info.json");
-    if (InformationResp->status == 404) {
+JSON Mirror::Query(const XBytes &PackageName, const XBytes &OS, const XBytes &Arch) {
+    httplib::Client Client(MirrorUrl);
+    if (auto InformationResp = Client.Get(
+            "/xpm-mirror/packages/" + PackageName + "/info_" + OS + "_" + Arch + ".json")) {
+        if (InformationResp->status == 404) {
+            throw PackageNotExist(PackageName);
+        }
+        return JSON::parse(InformationResp.value().body);
+    } else {
+        auto err = InformationResp.error();
+        std::cout << "HTTP error: " << httplib::to_string(err) << std::endl;
         throw PackageNotExist(PackageName);
     }
-    return JSON::parse(InformationResp.value().body);
 }
 
 void Mirror::Download(const XBytes &PackageName, const XBytes &Version) {
-    JSON PackageInfo = Query(PackageName);
+    httplib::Client Client(MirrorUrl);
+    JSON PackageInfo = Query(PackageName, OperatingSystem, Architecture);
     if (Utils::PMConfig["InstalledPackages"].count(PackageName)) {
-        std::cout << "Version " << Utils::PMConfig["InstalledPackages"][PackageName]["InstalledVersion"] << " of package " << PackageName << " already installed." << std::endl;
+        std::cout << "Version " << Utils::PMConfig["InstalledPackages"][PackageName].get<std::string>()
+                  << " of package " << PackageName << " already installed." << std::endl;
     } else {
         if (PackageInfo["Versions"].count(Version)) {
-            for (auto &I : PackageInfo["Versions"][Version]["Dependencies"]) {
+            for (auto &I: PackageInfo["Versions"][Version]["Dependencies"]) {
                 Download(I["Name"], I["Version"]);
             }
+            XArchive::ArchiveFormat Format{};
+
             Utils::MakeDirectoryForPackage(PackageName);
-            for (auto &File: PackageInfo["Version"][Version]["PackageFiles"]) {
-                XBytes Path = Utils::GetPackageDir(PackageName) + "/" + nlohmann::to_string(File["Name"]);
-                FILE *FilePointer = fopen(Path.c_str(), "wb+");
+            if (!PackageInfo["Versions"][Version]["BytecodePackage"].get<std::string>().empty()) {
+                FILE *FilePointer = fopen((std::filesystem::temp_directory_path() / "temp.xar").string().c_str(),
+                                          "wb+");
                 if (FilePointer) {
                     XInteger Len = 0;
-                    auto Result = Client.Get(File["Url"], [&](const char *data, size_t data_length) {
-                        Len += static_cast<XInteger>(data_length);
-                        Utils::PrintProgress(File["Name"], Len);
-                        fwrite(data, data_length, 1, FilePointer);
-                        return true;
-                    });
+                    auto Result = Client.Get(
+                            "/xpm-mirror" + PackageInfo["Versions"][Version]["BytecodePackage"].get<std::string>(),
+                            [&](const char *data, size_t data_length) {
+                                Len += static_cast<XInteger>(data_length);
+                                Utils::PrintProgress(PackageInfo["Versions"][Version]["BytecodePackage"], Len);
+                                fwrite(data, data_length, 1, FilePointer);
+                                return true;
+                            });
+                    fclose(FilePointer);
+
+                    Format.DecompressToDirectory(std::filesystem::temp_directory_path() / "temp.xar",
+                                                 Utils::GetPackageDir(PackageName));
                 } else {
                     throw CannotCreateFile();
                 }
             }
-            for (auto &File: PackageInfo["Version"][Version]["NativeLibrariesFiles"]) {
-                XBytes Path =
-                        Utils::GetPackageDir(PackageName) + "/NativeLibraries/" + nlohmann::to_string(File["Name"]);
-                FILE *FilePointer = fopen(Path.c_str(), "wb+");
+
+            if (!PackageInfo["Versions"][Version]["NativeLibrariesPackage"].get<std::string>().empty()) {
+                FILE *FilePointer = fopen((std::filesystem::temp_directory_path() / "temp.xar").string().c_str(),
+                                          "wb+");
                 if (FilePointer) {
+                    std::cout << "/xpm-mirror" +
+                                 PackageInfo["Versions"][Version]["NativeLibrariesPackage"].get<std::string>() << std::endl << std::flush;
                     XInteger Len = 0;
-                    auto Result = Client.Get(File["Url"], [&](const char *data, size_t data_length) {
-                        Len += static_cast<XInteger>(data_length);
-                        Utils::PrintProgress(File["Name"], Len);
-                        fwrite(data, data_length, 1, FilePointer);
-                        return true;
-                    });
+                    auto Result = Client.Get(
+                            "/xpm-mirror" +
+                            PackageInfo["Versions"][Version]["NativeLibrariesPackage"].get<std::string>(),
+                            [&](const char *data, size_t data_length) {
+                                Len += static_cast<XInteger>(data_length);
+                                Utils::PrintProgress(PackageInfo["Versions"][Version]["NativeLibrariesPackage"], Len);
+                                fwrite(data, data_length, 1, FilePointer);
+                                return true;
+                            });
+                    fclose(FilePointer);
+
+                    Format.DecompressToDirectory(std::filesystem::temp_directory_path() / "temp.xar",
+                                                 Utils::GetPackageDir(PackageName) / "NativeLibraries");
                 } else {
                     throw CannotCreateFile();
                 }

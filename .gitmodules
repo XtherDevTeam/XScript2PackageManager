@@ -1,3 +1,6 @@
 [submodule "XScript2"]
 	path = XScript2
 	url = http://www.xiaokang00010.top:4001/xiaokang00010/XScript2.git
+[submodule "Utils/XArchive"]
+	path = Utils/XArchive
+	url = https://hub.fastgit.xyz/XtherDevTeam/XArchive

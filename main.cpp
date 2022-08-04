@@ -4,6 +4,7 @@
 #include "Network/Mirror.hpp"
 
 XMap<XBytes, XBytes> Arguments;
+
 void ParseArguments(int argc, const char **argv) {
     /* defaults */
     Arguments["PATH"] = ".;";
@@ -29,33 +30,63 @@ void ParseArguments(int argc, const char **argv) {
 int main(int argc, const char **argv) {
     ParseArguments(argc, argv);
     if (Arguments.count("switch-mirror")) {
-        if (Arguments.count("global")) {
-            Utils::IsGlobal = true;
-        }
+        Utils::IsGlobal = true;
         Utils::GetPMConfigFile();
         Utils::PMConfig["Mirror"] = Arguments["url"];
-    }
-    else if (Arguments.count("install")) {
-        if (Arguments.count("global")) {
-            Utils::IsGlobal = true;
-        }
+        Utils::StorePMConfigFile();
+    } else if (Arguments.count("install")) {
+        Utils::IsGlobal = true;
         Utils::GetPMConfigFile();
         Mirror M(Utils::PMConfig["Mirror"]);
         M.Download(Arguments["name"], Arguments["ver"]);
-    }
-    else if (Arguments.count("uninstall")) {
-        if (Arguments.count("global")) {
-            Utils::IsGlobal = true;
+        Utils::StorePMConfigFile();
+
+        Utils::PMConfig = {};
+        if (!Arguments.count("global")) {
+            Utils::IsGlobal = false;
+            Utils::GetPMConfigFile();
+            Utils::PMConfig["Dependencies"].push_back(
+                    (std::map<std::string, std::string>) {
+                            {"Name",    Arguments["name"]},
+                            {"Version", Arguments["ver"]}
+                    });
+            Utils::StorePMConfigFile();
         }
+    } else if (Arguments.count("uninstall")) {
+        Utils::IsGlobal = true;
         Utils::GetPMConfigFile();
         Utils::RemovePackage(Arguments["name"]);
-    }
-    else if (Arguments.count("create-project")) {
+        Utils::StorePMConfigFile();
+
+        Utils::PMConfig = {};
+        if (!Arguments.count("global")) {
+            Utils::IsGlobal = false;
+            Utils::GetPMConfigFile();
+            for (auto Iter = Utils::PMConfig["Dependencies"].begin(); Iter != Utils::PMConfig["Dependencies"].end(); Iter++) {
+                if ((*Iter)["Name"] == Arguments["name"]) {
+                    Utils::PMConfig["Dependencies"].erase(Iter);
+                    break;
+                }
+            }
+            Utils::StorePMConfigFile();
+        }
+    } else if (Arguments.count("create-project")) {
         Utils::MakeProject(Arguments["name"]);
-    }
-    else if (Arguments.count("build-project")) {
+    } else if (Arguments.count("build-project")) {
         Utils::GetPMConfigFile();
         Utils::BuildProject();
+        Utils::StorePMConfigFile();
+    } else if (Arguments.count("run-project")) {
+        Utils::GetPMConfigFile();
+        Utils::RunProject(Arguments["exec"]);
+        Utils::StorePMConfigFile();
+    } else if (Arguments.count("pack-build-dir")) {
+        Utils::GetPMConfigFile();
+        Utils::PackBuildDir(Utils::PMConfig["Name"]);
+        Utils::StorePMConfigFile();
+    } else if (Arguments.count("run-package")) {
+        Utils::RunPackage(Arguments["package"], Arguments["exec"]);
     }
+
     return 0;
 }

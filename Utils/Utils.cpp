@@ -7,6 +7,8 @@
 #include "PackageNotExist.hpp"
 #include "../XScript2/Backend/CompilerEnvironment.hpp"
 #include "../XScript2/Core/CompilerCore.hpp"
+#include "../XScript2/Executor/Executor.hpp"
+#include "XArchive/Sources/ArchiveFormat.hpp"
 
 #include <unistd.h>
 #include <fstream>
@@ -91,8 +93,10 @@ namespace Utils {
     JSON &GetPMConfigFile() {
         if (PMConfig == (JSON) {}) {
             if (IsGlobal) {
+                puts(("global: " + GetPackageManagerDir() + "/" + PMConfigFileName).c_str());
                 return PMConfig = JSON::parse(std::ifstream(GetPackageManagerDir() + "/" + PMConfigFileName));
             } else {
+                puts(("local: " + (std::string) ("./") + PMConfigFileName).c_str());
                 return PMConfig = JSON::parse(std::ifstream((std::string) ("./") + PMConfigFileName));
             }
         } else {
@@ -101,9 +105,15 @@ namespace Utils {
     }
 
     void StorePMConfigFile() {
-        std::ofstream Out(GetPackageManagerDir() + "/" + PMConfigFileName);
-        Out << std::setw(4) << PMConfig;
-        Out.close();
+        if (IsGlobal) {
+            std::ofstream Out(GetPackageManagerDir() + "/" + PMConfigFileName);
+            Out << std::setw(4) << PMConfig;
+            Out.close();
+        } else {
+            std::ofstream Out((std::string) ("./") + PMConfigFileName);
+            Out << std::setw(4) << PMConfig;
+            Out.close();
+        }
     }
 
     void MakeDirectoryForPackage(const XBytes &Name) {
@@ -117,12 +127,9 @@ namespace Utils {
         }
     }
 
-    XBytes GetPackageDir(const XBytes &Name) {
-        if (IsGlobal) {
-            return GetPackageManagerDir() + "/InstalledPackages/" + Name;
-        } else {
-            return (std::string) ("./InstalledPackages/") + Name;
-        }
+    std::filesystem::path GetPackageDir(const XBytes &Name) {
+        return GetPackageManagerDir() + "/InstalledPackages/" + Name;
+
     }
 
     void PrintProgress(const XBytes &File, XInteger Progress) {
@@ -145,7 +152,7 @@ namespace Utils {
 
     void RemovePackage(const XBytes &Name) {
         if (std::filesystem::exists(GetPackageDir(Name))) {
-            std::filesystem::remove(GetPackageDir(Name));
+            std::filesystem::remove_all(GetPackageDir(Name));
             PMConfig["InstalledPackages"].erase(Name);
         } else {
             throw PackageNotExist(Name);
@@ -153,12 +160,11 @@ namespace Utils {
     }
 
     void MakeProject(const XBytes &NameOfTheProject) {
-        std::filesystem::create_directories("./" + NameOfTheProject + "/XPMBuildDir");
+        std::filesystem::create_directories("./" + NameOfTheProject + "/XPMBuildDir/NativeLibraries");
         std::filesystem::create_directories("./" + NameOfTheProject + "/Sources/Main");
         JSON NewConfigFile;
         NewConfigFile["XPMVersion"] = XPMBuildNumber;
-        NewConfigFile["Dependencies"] = (XMap<XBytes, XBytes>) {};
-        NewConfigFile["InstalledPackages"] = (XMap<XBytes, XBytes>) {};
+        NewConfigFile["Dependencies"] = (XArray<XBytes>) {};
         NewConfigFile["Type"] = "Project";
         NewConfigFile["Name"] = NameOfTheProject;
         NewConfigFile["Description"] = "";
@@ -186,7 +192,7 @@ namespace Utils {
             if (I["IsExecutable"]) {
                 Environ.CompilerFlags.push_back(L"compile_as_executable.true");
             }
-            Environ.PathsToSearch.push_back(L"./InstalledPackages");
+            Environ.PathsToSearch.push_back(L"./" + string2wstring(PMConfig["BuildDir"].get<std::string>()));
             Environ.PathsToSearch.push_back(string2wstring(GetPackageManagerDir() + "/InstalledPackages"));
             AddDirectoryToTarget(Environ, "./" + I["Path"].get<std::string>());
             XScript::OutputBinary(
@@ -208,4 +214,31 @@ namespace Utils {
             }
         }
     }
+
+    void RunProject(const std::string &PkgFileName) {
+        XScript::Executor VM;
+        VM.VM.PathsToSearch.push_back(L"./" + string2wstring(PMConfig["BuildDir"].get<std::string>()));
+        VM.VM.PathsToSearch.push_back(string2wstring(GetPackageManagerDir() + "/InstalledPackages"));
+        VM.Load(L"./" + string2wstring(PMConfig["BuildDir"].get<std::string>()) + L"/" + string2wstring(PkgFileName));
+        VM.Init();
+        VM.Start();
+    }
+
+    void RunPackage(const std::string &Package, const std::string &PkgFileName) {
+        XScript::Executor VM;
+        VM.VM.PathsToSearch.push_back(string2wstring(GetPackageDir(Package)));
+        VM.VM.PathsToSearch.push_back(string2wstring(GetPackageManagerDir() + "/InstalledPackages"));
+        VM.Init();
+        VM.Start();
+    }
+
+    void PackBuildDir(const std::string &PackageName) {
+        std::filesystem::path Path = "./" + PMConfig["BuildDir"].get<std::string>();
+        XArchive::ArchiveFormat Format{};
+        auto IgnoreFiles = XArchive::ArchiveFormat::MakeIgnoreFileList(Path, {"NativeLibraries"});
+        Format.CompressDirectory("", Path, Path / (PackageName + ".bytecode_package.xar"), IgnoreFiles);
+
+        Format.CompressDirectory("", Path / "NativeLibraries",
+                                 Path / (PackageName + ".native_" + OperatingSystem + "_" + Architecture + ".xar"), {});
+    };
 }

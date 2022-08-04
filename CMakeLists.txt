@@ -22,4 +22,8 @@ file(GLOB XS2SDK_FILES
         "XScript2/NativeLibrary/*.cpp"
         )
 
-add_executable(XScript2PackageManager ${XS2SDK_FILES} ${SRC_FILES} main.cpp)
+file(GLOB XARCHIVE_SRC_FILES
+        Utils/XArchive/Exceptions/*.cpp
+        Utils/XArchive/Sources/*.cpp)
+
+add_executable(XScript2PackageManager ${XS2SDK_FILES} ${XARCHIVE_SRC_FILES} ${SRC_FILES} main.cpp)

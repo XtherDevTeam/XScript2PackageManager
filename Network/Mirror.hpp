@@ -9,12 +9,11 @@
 #include "httplib.hpp"
 
 class Mirror {
-    httplib::Client Client;
     XBytes MirrorUrl;
 public:
     Mirror(const XBytes &MirrorUrl);
 
-    JSON Query(const XBytes &PackageName);
+    JSON Query(const XBytes &PackageName, const XBytes &OS, const XBytes &Arch);
 
     void Download(const XBytes &PackageName, const XBytes &Version);
 };

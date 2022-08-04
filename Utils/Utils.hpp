@@ -18,8 +18,28 @@ using namespace XScript;
 
 using JSON = nlohmann::json;
 
+#if defined(__linux__)
+#define OperatingSystem "linux"
+#elif defined(__APPLE__)
+#define OperatingSystem "darwin"
+#elif defined(_WIN32)
+#define OperatingSystem "win32"
+#else
+#define OperatingSystem "unknown"
+#endif
+
+#if defined(__aarch64__)
+#define Architecture "arm64"
+#elif defined(__x86_64__)
+#define Architecture "amd64"
+#elif defined(__i386__)
+#define Architecture "i386"
+#elif defined(__arm__)
+#define Architecture "arm"
+#endif
+
 namespace Utils {
-    constexpr const char* PMConfigFileName = "PackageManagerConfig.json";
+    constexpr const char *PMConfigFileName = "PackageManagerConfig.json";
 
     extern JSON PMConfig;
 
@@ -37,7 +57,7 @@ namespace Utils {
 
     void MakeDirectoryForPackage(const XBytes &Name);
 
-    XBytes GetPackageDir(const XBytes &Name);
+    std::filesystem::path GetPackageDir(const XBytes &Name);
 
     void PrintProgress(const XBytes &File, XInteger Progress);
 
@@ -50,6 +70,12 @@ namespace Utils {
     void AddDirectoryToTarget(XScript::Compiler::CompilerEnvironment &Env, const std::string &Path);
 
     void BuildProject();
+
+    void RunProject(const std::string &PkgFileName);
+
+    void RunPackage(const std::string &Package, const std::string &PkgFileName);
+
+    void PackBuildDir(const std::string &PackageName);
 }
 
 #endif //XSCRIPT2PACKAGEMANAGER_UTILS_HPP
