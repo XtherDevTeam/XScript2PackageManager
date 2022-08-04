@@ -9,6 +9,7 @@
 #include "../XScript2/Core/CompilerCore.hpp"
 #include "../XScript2/Executor/Executor.hpp"
 #include "XArchive/Sources/ArchiveFormat.hpp"
+#include "whereami/whereami.h"
 
 #include <unistd.h>
 #include <fstream>
@@ -41,54 +42,17 @@ namespace Utils {
             "}\n";
 
     XBytes LastProgressContent;
-#if defined(_WIN32)
-    std::string Utils::GetPackageManagerDir() {
-        char FilePath[2048] = {0};
-        ::GetModuleFileNameA(NULL, FilePath, 2048);
-
-        std::string Result;
-        Result.append(FilePath);
-        int DelimPos = Result.rfind('\\');
-
-        if (std::string::npos == DelimPos) {
-            Result = "";
-        } else {
-            Result = Result.substr(0, DelimPos);
-        }
-
-        return Result;
-    }
-#elif defined(__APPLE__)
-    std::string Utils::GetPackageManagerDir() {
-        char buf[0];
-        uint32_t size = 0;
-        int res = _NSGetExecutablePath(buf,&size);
-
-        char* path = new char[size+1];
-        path[size] = 0;
-        res = _NSGetExecutablePath(path,&size);
-
-        char* p = strrchr(path, '/');
-        *p = 0;
-        std::string pathTemp;
-        pathTemp.append(path);
-        delete[] path;
-        return pathTemp;
-    }
-#else
 
     std::string GetPackageManagerDir() {
-        std::string Path;
-        Path.resize(2048);
+        std::string path;
+        int length, dirname_length;
 
-        ssize_t sz = readlink("/proc/self/exe", Path.data(), 2048);
-        if (sz == -1)
-            return "";
-        Path = Path.substr(0, Path.rfind('/'));
-        return Path;
+        length = wai_getExecutablePath(NULL, 0, &dirname_length);
+        path.resize(length + 1);
+        wai_getExecutablePath(path.data(), length, &dirname_length);
+        path[length] = '\0';
+        return path.substr(0, path.rfind('/'));
     }
-
-#endif
 
     JSON &GetPMConfigFile() {
         if (PMConfig == (JSON) {}) {
@@ -243,10 +207,9 @@ namespace Utils {
     }
 
     void Initialize() {
-        // www.xiaokang00010.top:4002
         JSON NewConfigFile;
         NewConfigFile["XPMVersion"] = XPMBuildNumber;
-        NewConfigFile["Mirror"] = "www.xiaokang00010.top:4002";
+        NewConfigFile["Mirror"] = "http://www.xiaokang00010.top:4002";
         NewConfigFile["InstalledPackages"] = (std::map<XBytes, XBytes>) {};
         std::ofstream Stream(GetPackageManagerDir() + "/" + PMConfigFileName);
         Stream << std::setw(4) << NewConfigFile;

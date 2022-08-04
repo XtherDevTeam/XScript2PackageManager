@@ -26,7 +26,10 @@ file(GLOB XARCHIVE_SRC_FILES
         Utils/XArchive/Exceptions/*.cpp
         Utils/XArchive/Sources/*.cpp)
 
-add_executable(xpm ${XS2SDK_FILES} ${XARCHIVE_SRC_FILES} ${SRC_FILES} main.cpp)
+file (GLOB WHEREAMI_SRC_FILES
+        Utils/whereami/*.cpp)
+
+add_executable(xpm ${WHEREAMI_SRC_FILES} ${XS2SDK_FILES} ${XARCHIVE_SRC_FILES} ${SRC_FILES} main.cpp)
 
 if (CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
     TARGET_LINK_LIBRARIES(xpm dl)

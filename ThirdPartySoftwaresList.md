@@ -1,3 +1,4 @@
 - [cpp-httplib](https://github.com/yhirose/cpp-httplib)
 - [json](https://github.com/nlohmann/json)
 - [XArchive](https://github.com/XtherDevTeam/XArchive)
+- [whereami](https://github.com/gpakosz/whereami)
