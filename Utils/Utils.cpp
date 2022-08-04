@@ -251,4 +251,5 @@ namespace Utils {
         std::ofstream Stream(GetPackageManagerDir() + "/" + PMConfigFileName);
         Stream << std::setw(4) << NewConfigFile;
         Stream.close();
-    };
+    }
+};
