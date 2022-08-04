@@ -27,3 +27,10 @@ file(GLOB XARCHIVE_SRC_FILES
         Utils/XArchive/Sources/*.cpp)
 
 add_executable(xpm ${XS2SDK_FILES} ${XARCHIVE_SRC_FILES} ${SRC_FILES} main.cpp)
+
+if (CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
+    TARGET_LINK_LIBRARIES(xpm dl)
+    TARGET_LINK_LIBRARIES(xpm pthread)
+elseif (CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
+    set(CMAKE_EXE_LINKER_FLAGS "--static -lpthread")
+endif ()
