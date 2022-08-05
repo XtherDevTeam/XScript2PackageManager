@@ -57,9 +57,9 @@ void Mirror::Download(const XBytes &PackageName, const XBytes &Version) {
                                 return true;
                             });
                     fclose(FilePointer);
-
                     Format.DecompressToDirectory(std::filesystem::temp_directory_path() / "temp.xar",
                                                  Utils::GetPackageDir(PackageName));
+                    std::cout << "\nBytecode packages installed.\n";
                 } else {
                     throw CannotCreateFile();
                 }
@@ -82,7 +82,7 @@ void Mirror::Download(const XBytes &PackageName, const XBytes &Version) {
                                 return true;
                             });
                     fclose(FilePointer);
-
+                    std::cout << "\nNative library packages installed.\n";
                     Format.DecompressToDirectory(std::filesystem::temp_directory_path() / "temp.xar",
                                                  Utils::GetPackageDir(PackageName) / "NativeLibraries");
                 } else {
