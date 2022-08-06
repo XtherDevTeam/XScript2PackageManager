@@ -90,6 +90,7 @@ void Mirror::Download(const XBytes &PackageName, const XBytes &Version) {
                 } else {
                     throw CannotCreateFile();
                 }
+                std::filesystem::remove(std::filesystem::temp_directory_path() / "temp.xar");
             }
         } else {
             throw PackageVersionNotExist(PackageName, Version);

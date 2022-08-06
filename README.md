@@ -19,7 +19,3 @@ xpm run-package package=PackageName exec=ExecFileName
 
 xpm init
 ```
-
-## Known issues
-
-- xpm won't remove unnecessary dependency packages during uninstall process
