@@ -33,7 +33,7 @@ void Mirror::Download(const XBytes &PackageName, const XBytes &Version) {
     httplib::Client Client(MirrorUrl);
     JSON PackageInfo = Query(PackageName, OperatingSystem, Architecture);
     if (Utils::PMConfig["InstalledPackages"].count(PackageName)) {
-        std::cout << "Version " << Utils::PMConfig["InstalledPackages"][PackageName].get<std::string>()
+        std::cout << "Version " << Utils::PMConfig["InstalledPackages"][PackageName]["Version"].get<std::string>()
                   << " of package " << PackageName << " already installed." << std::endl;
     } else {
         if (PackageInfo["Versions"].count(Version)) {
