@@ -97,16 +97,22 @@ namespace Utils {
         if (PMConfig["InstalledPackages"].count(Name)) {
             if (Version == PMConfig["InstalledPackages"][Name])
                 return;
-            throw PackageAlreadyExist(Name, nlohmann::to_string(PMConfig["InstalledPackages"][Name]));
+            throw PackageAlreadyExist(Name, nlohmann::to_string(PMConfig["InstalledPackages"][Name]["Version"]));
         } else {
-            PMConfig["InstalledPackages"][Name] = Version;
+            PMConfig["InstalledPackages"][Name]["Version"] = Version;
+            PMConfig["InstalledPackages"][Name]["ReferenceCount"] = 1;
         }
     }
 
     void RemovePackage(const XBytes &Name) {
         if (std::filesystem::exists(GetPackageDir(Name))) {
-            std::filesystem::remove_all(GetPackageDir(Name));
-            PMConfig["InstalledPackages"].erase(Name);
+            if (PMConfig["InstalledPackages"][Name]["ReferenceCount"].get<XInteger>() - 1) {
+                PMConfig["InstalledPackages"][Name]["ReferenceCount"] =
+                        PMConfig["InstalledPackages"][Name]["ReferenceCount"].get<XInteger>() - 1;
+            } else {
+                std::filesystem::remove_all(GetPackageDir(Name));
+                PMConfig["InstalledPackages"].erase(Name);
+            }
         } else {
             throw PackageNotExist(Name);
         }
@@ -148,13 +154,16 @@ namespace Utils {
             if (I["IsExecutable"]) {
                 Environ.CompilerFlags.push_back(L"compile_as_executable.true");
             }
-            Environ.PathsToSearch.push_back(string2wstring((std::filesystem::path(".") / PMConfig["BuildDir"].get<std::string>()).string()));
-            Environ.PathsToSearch.push_back(string2wstring((std::filesystem::path(GetPackageManagerDir()) / "InstalledPackages").string()));
+            Environ.PathsToSearch.push_back(
+                    string2wstring((std::filesystem::path(".") / PMConfig["BuildDir"].get<std::string>()).string()));
+            Environ.PathsToSearch.push_back(
+                    string2wstring((std::filesystem::path(GetPackageManagerDir()) / "InstalledPackages").string()));
             AddDirectoryToTarget(Environ, std::filesystem::path(".") / I["Path"].get<std::string>());
             XScript::OutputBinary(
                     Environ,
                     string2wstring(
-                            (std::filesystem::path(".") / PMConfig["BuildDir"].get<std::string>() / I["Name"].get<std::string>()).string()));
+                            (std::filesystem::path(".") / PMConfig["BuildDir"].get<std::string>() /
+                             I["Name"].get<std::string>()).string()));
         }
     }
 
@@ -173,7 +182,8 @@ namespace Utils {
 
     void RunProject(const std::string &PkgFileName) {
         XScript::Executor VM;
-        VM.VM.PathsToSearch.push_back(string2wstring((std::filesystem::path(".") /PMConfig["BuildDir"].get<std::string>()).string()));
+        VM.VM.PathsToSearch.push_back(
+                string2wstring((std::filesystem::path(".") / PMConfig["BuildDir"].get<std::string>()).string()));
         VM.VM.PathsToSearch.push_back(
                 string2wstring((std::filesystem::path(GetPackageManagerDir()) / "InstalledPackages").string()));
         VM.Load(string2wstring((std::filesystem::path(".") /

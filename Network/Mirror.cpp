@@ -39,6 +39,8 @@ void Mirror::Download(const XBytes &PackageName, const XBytes &Version) {
         if (PackageInfo["Versions"].count(Version)) {
             for (auto &I: PackageInfo["Versions"][Version]["Dependencies"]) {
                 Download(I["Name"], I["Version"]);
+                Utils::PMConfig["InstalledPackages"][I["Name"].get<std::string>()]["ReferenceCount"] =
+                        Utils::PMConfig["InstalledPackages"][I["Name"].get<std::string>()]["ReferenceCount"].get<XInteger>() + 1;
             }
             XArchive::ArchiveFormat Format{};
 
@@ -93,5 +95,19 @@ void Mirror::Download(const XBytes &PackageName, const XBytes &Version) {
             throw PackageVersionNotExist(PackageName, Version);
         }
         Utils::AddPackageInformation(PackageName, Version);
+    }
+}
+
+void Mirror::Uninstall(const XBytes &Package) {
+    if (Utils::PMConfig["InstalledPackages"].count(Package)) {
+        auto Version = Utils::PMConfig["InstalledPackages"]["Version"].get<std::string>();
+
+        JSON PackageInfo = Query(Package, OperatingSystem, Architecture);
+        for (auto &I: PackageInfo["Versions"][Version]["Dependencies"]) {
+            Uninstall(I["Name"].get<std::string>());
+        }
+        Utils::RemovePackage(Package);
+    } else {
+        throw PackageNotExist(Package);
     }
 }

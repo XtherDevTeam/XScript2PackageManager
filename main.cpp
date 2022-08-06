@@ -71,7 +71,8 @@ int main(int argc, const char **argv) {
         } else if (Arguments.count("uninstall")) {
             Utils::IsGlobal = true;
             Utils::GetPMConfigFile();
-            Utils::RemovePackage(Arguments["name"]);
+            Mirror M(Utils::PMConfig["Mirror"]);
+            M.Uninstall(Arguments["name"]);
             Utils::StorePMConfigFile();
 
             Utils::PMConfig = {};
