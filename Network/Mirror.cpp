@@ -101,7 +101,7 @@ void Mirror::Download(const XBytes &PackageName, const XBytes &Version) {
 
 void Mirror::Uninstall(const XBytes &Package) {
     if (Utils::PMConfig["InstalledPackages"].count(Package)) {
-        auto Version = Utils::PMConfig["InstalledPackages"]["Version"].get<std::string>();
+        auto Version = Utils::PMConfig["InstalledPackages"][Package]["Version"].get<std::string>();
 
         JSON PackageInfo = Query(Package, OperatingSystem, Architecture);
         for (auto &I: PackageInfo["Versions"][Version]["Dependencies"]) {
