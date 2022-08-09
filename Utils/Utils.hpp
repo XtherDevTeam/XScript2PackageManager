@@ -41,6 +41,8 @@ using JSON = nlohmann::json;
 #endif
 
 namespace Utils {
+    constexpr const wchar_t *CommitVersion = PM_COMMIT_VERSION;
+
     constexpr const char *PMConfigFileName = "PackageManagerConfig.json";
 
     extern JSON PMConfig;

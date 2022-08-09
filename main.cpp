@@ -106,6 +106,11 @@ int main(int argc, const char **argv) {
             Utils::RunPackage(Arguments["package"], Arguments["exec"]);
         } else if (Arguments.count("init")) {
             Utils::Initialize();
+        } else if (Arguments.count("version")) {
+            std::cout << "XScript2 Package Manager\n";
+            std::cout << "Package Manager version: " << wstring2string(Utils::CommitVersion) << "\n";
+            std::cout << "XScript2 Core version: " << wstring2string(CommitVersion) << "\n";
+            std::cout << "Developed by Jerry Chou(Winghong Zau).\n" << std::flush;
         }
     } catch (const XScript::CompilerError &E) {
         std::cout << E.what() << std::endl;

@@ -46,6 +46,7 @@ void Mirror::Download(const XBytes &PackageName, const XBytes &Version) {
 
             Utils::MakeDirectoryForPackage(PackageName);
             if (!PackageInfo["Versions"][Version]["BytecodePackage"].get<std::string>().empty()) {
+                XIndexType Step = 0;
                 FILE *FilePointer = fopen((std::filesystem::temp_directory_path() / "temp.xar").string().c_str(),
                                           "wb+");
                 if (FilePointer) {
@@ -54,7 +55,8 @@ void Mirror::Download(const XBytes &PackageName, const XBytes &Version) {
                             "/xpm-mirror" + PackageInfo["Versions"][Version]["BytecodePackage"].get<std::string>(),
                             [&](const char *data, size_t data_length) {
                                 Len += static_cast<XInteger>(data_length);
-                                Utils::PrintProgress(PackageInfo["Versions"][Version]["BytecodePackage"], Len);
+                                if (Step++ == 100)
+                                    Utils::PrintProgress(PackageInfo["Versions"][Version]["BytecodePackage"], Len);
                                 fwrite(data, data_length, 1, FilePointer);
                                 return true;
                             });
@@ -68,6 +70,7 @@ void Mirror::Download(const XBytes &PackageName, const XBytes &Version) {
             }
 
             if (!PackageInfo["Versions"][Version]["NativeLibrariesPackage"].get<std::string>().empty()) {
+                XIndexType Step = 0;
                 FILE *FilePointer = fopen((std::filesystem::temp_directory_path() / "temp.xar").string().c_str(),
                                           "wb+");
                 if (FilePointer) {
@@ -79,7 +82,8 @@ void Mirror::Download(const XBytes &PackageName, const XBytes &Version) {
                             PackageInfo["Versions"][Version]["NativeLibrariesPackage"].get<std::string>(),
                             [&](const char *data, size_t data_length) {
                                 Len += static_cast<XInteger>(data_length);
-                                Utils::PrintProgress(PackageInfo["Versions"][Version]["NativeLibrariesPackage"], Len);
+                                if (Step++ == 100)
+                                    Utils::PrintProgress(PackageInfo["Versions"][Version]["NativeLibrariesPackage"], Len);
                                 fwrite(data, data_length, 1, FilePointer);
                                 return true;
                             });

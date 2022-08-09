@@ -3,6 +3,16 @@ project(XScript2PackageManager)
 
 set(CMAKE_CXX_STANDARD 20)
 
+include("${CMAKE_CURRENT_SOURCE_DIR}/XScript2/Share/Git.cmake")
+
+set(WHERE_IS_REPO_PATH "${CMAKE_CURRENT_SOURCE_DIR}/XScript2")
+set(XS_GIT_COMMIT_HASH "")
+get_git_hash(XS_GIT_COMMIT_HASH)
+
+set(WHERE_IS_REPO_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
+set(PM_GIT_COMMIT_HASH "")
+get_git_hash(PM_GIT_COMMIT_HASH)
+
 file(GLOB SRC_FILES
         Manage/*.cpp
         Network/*.cpp
@@ -38,3 +48,5 @@ elseif (CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
     TARGET_LINK_LIBRARIES(xpm wsock32 ws2_32)
     set(CMAKE_EXE_LINKER_FLAGS "--static -lpthread")
 endif ()
+
+add_definitions(-DXSCRIPT2_COMMIT_VERSION=L\"${XS_GIT_COMMIT_HASH}\" -DPM_COMMIT_VERSION=L\"${PM_GIT_COMMIT_HASH}\")
