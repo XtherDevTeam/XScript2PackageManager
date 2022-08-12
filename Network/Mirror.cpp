@@ -55,7 +55,7 @@ void Mirror::Download(const XBytes &PackageName, const XBytes &Version) {
                             "/xpm-mirror" + PackageInfo["Versions"][Version]["BytecodePackage"].get<std::string>(),
                             [&](const char *data, size_t data_length) {
                                 Len += static_cast<XInteger>(data_length);
-                                if (Step++ == 100)
+                                if (!(Step % 100))
                                     Utils::PrintProgress(PackageInfo["Versions"][Version]["BytecodePackage"], Len);
                                 fwrite(data, data_length, 1, FilePointer);
                                 return true;
@@ -82,7 +82,7 @@ void Mirror::Download(const XBytes &PackageName, const XBytes &Version) {
                             PackageInfo["Versions"][Version]["NativeLibrariesPackage"].get<std::string>(),
                             [&](const char *data, size_t data_length) {
                                 Len += static_cast<XInteger>(data_length);
-                                if (Step++ == 100)
+                                if (!(Step % 100))
                                     Utils::PrintProgress(PackageInfo["Versions"][Version]["NativeLibrariesPackage"], Len);
                                 fwrite(data, data_length, 1, FilePointer);
                                 return true;
