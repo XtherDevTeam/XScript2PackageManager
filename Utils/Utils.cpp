@@ -190,7 +190,6 @@ namespace Utils {
                                 PMConfig["BuildDir"].get<std::string>() / string2wstring(PkgFileName)).string()));
         VM.Init();
         VM.Start();
-        VM.GC.Stop();
     }
 
     void RunPackage(const std::string &Package, const std::string &PkgFileName) {
@@ -200,7 +199,6 @@ namespace Utils {
                 string2wstring((std::filesystem::path(GetPackageManagerDir()) / "InstalledPackages").string()));
         VM.Init();
         VM.Start();
-        VM.GC.Stop();
     }
 
     void PackBuildDir(const std::string &PackageName) {
